@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { App_features } from "../../utils/data";
 
@@ -77,6 +77,7 @@ function LandingPage() {
   // State for animated elements
   const [activeFeatureIndex, setActiveFeatureIndex] = useState(0);
   const [scrollY, setScrollY] = useState(0);
+  const navigate = useNavigate();
   
   // Handle scroll position for parallax effects
   useEffect(() => {
@@ -196,19 +197,35 @@ function LandingPage() {
               <a href="#" className="text-slate-300 hover:text-white transition-colors duration-200">About</a>
             </motion.div>
             
-            {/* Login button with professional style */}
+            {/* Auth buttons with professional style */}
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex items-center space-x-3"
             >
-              <Link to="/login" className="relative group">
+              {/* Login button */}
+              <button 
+                onClick={() => navigate('/login')}
+                className="relative group"
+              >
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-sky-500 rounded-lg opacity-40 blur-sm group-hover:opacity-60 transition duration-200"></div>
-                <div className="relative px-5 py-2 bg-slate-900 rounded-lg flex items-center space-x-2 group-hover:bg-slate-800 transition duration-200">
+                <div className="relative px-4 py-2 bg-slate-900 rounded-lg flex items-center space-x-2 group-hover:bg-slate-800 transition duration-200">
                   <UserCircle className="w-5 h-5 text-blue-400 group-hover:text-blue-300" />
-                  <span className="text-white font-medium">Login / Sign Up</span>
+                  <span className="text-white font-medium">Login</span>
                 </div>
-              </Link>
+              </button>
+              
+              {/* Sign Up button */}
+              <button 
+                onClick={() => navigate('/signup')}
+                className="relative group"
+              >
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-teal-500 to-sky-500 rounded-lg opacity-40 blur-sm group-hover:opacity-60 transition duration-200"></div>
+                <div className="relative px-4 py-2 bg-slate-900 rounded-lg flex items-center space-x-2 group-hover:bg-slate-800 transition duration-200">
+                  <span className="text-white font-medium">Sign Up</span>
+                </div>
+              </button>
             </motion.div>
           </div>
         </motion.nav>
@@ -741,7 +758,7 @@ function LandingPage() {
           </div>
         </div>
       </footer>
-    </div>  
+    </div>
   )
 }
 
