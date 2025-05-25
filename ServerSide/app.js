@@ -19,7 +19,7 @@ app.use(cors(
         allowedHeaders: ["Content-Type", "Authorization"],
     }
 ))
-app.use(express.json({limit:"20kb"}))
+app.use(express.json({ limit: "20kb" }))
 //serve upload folders
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -29,8 +29,8 @@ import authRouter from "./routes/auth.route.js"
 import SessionRouter from "./routes/session.route.js"
 // import QuestionRouter from "./routes/question.route.js"
 app.use("/api/auth", authRouter)
-app.use("/api/session",SessionRouter)
+app.use("/api/session", SessionRouter)
 // app.use("/api/question", QuestionRouter)
 // app.use("/api/ai/generate-question",protect, generateInterviewQuestions)
 // app.use("/api/ai/generate-session",protect, generateConceptExplaination)
-export {app};
+export { app };

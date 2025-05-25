@@ -22,5 +22,10 @@ const fileFilter = (req, file, cb) => {
     }
 }
 //This restricts file types to common image formats only.
-const upload=multer({storage,fileFilter})
+const upload = multer({
+    storage,
+    fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+});
+
 export default upload
