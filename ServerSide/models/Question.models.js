@@ -1,20 +1,23 @@
-import mongoose,{Schema} from "mongoose"
+import mongoose, { Schema } from "mongoose"
 const questionSchema = new Schema({
-    session:{
-        type:Schema.Types.ObjectId,
-        ref:"Session"
+    session: {
+        type: Schema.Types.ObjectId,
+        ref: "Session"
     },
-    question:{
-        type:String,
+    question: {
+        type: String,
     },
-    answer:{
-        type:String,
+    answer: {
+        type: String,
     },
-    isPinned:{
-        type:Boolean,
-        default:false
+    isPinned: {
+        type: Boolean,
+        default: false
     },
-},{timestamps:true})
-export const Question = mongoose.model("Question",questionSchema)
-        
-        
+    note: {
+        type: String,
+        default: ""
+    }
+}, { timestamps: true })
+export const Question = mongoose.model("Question", questionSchema)
+

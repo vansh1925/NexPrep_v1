@@ -27,10 +27,10 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 //routes
 import authRouter from "./routes/auth.route.js"
 import SessionRouter from "./routes/session.route.js"
-// import QuestionRouter from "./routes/question.route.js"
+import QuestionRouter from "./routes/question.route.js"
 app.use("/api/auth", authRouter)
 app.use("/api/session", SessionRouter)
-// app.use("/api/question", QuestionRouter)
+app.use("/api/question", QuestionRouter)
 // app.use("/api/ai/generate-question",protect, generateInterviewQuestions)
 // app.use("/api/ai/generate-session",protect, generateConceptExplaination)
 export { app };
