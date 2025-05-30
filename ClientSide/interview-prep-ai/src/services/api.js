@@ -339,6 +339,44 @@ class ApiService {
       throw error;
     }
   }
+
+  static async createSession(sessionData) {
+    try {
+      const token = localStorage.getItem('token');
+      const url = API_PATHS.SESSION.CREATE;
+      console.log('Attempting to create session:', url);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(sessionData),
+        credentials: 'include',
+      });
+
+      const responseData = await response.json();
+      console.log('Create session response:', responseData);
+
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Failed to create session');
+      }
+
+      if (!responseData.success || !responseData.data) {
+        throw new Error('Invalid response format from server');
+      }
+
+      return responseData.data;
+    } catch (error) {
+      console.error('Create session error:', error);
+      if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+        throw new Error('Unable to connect to the server. Please check if the server is running.');
+      }
+      throw error;
+    }
+  }
 }
 
 export default ApiService; 

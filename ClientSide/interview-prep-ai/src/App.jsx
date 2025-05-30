@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import SessionDetail from './pages/SessionDetail';
+import CreateSession from './pages/CreateSession';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ const AppContent = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/create-session" element={<CreateSession />} />
         <Route path="/session/:sessionId" element={<SessionDetail />} />
         <Route path="practice" element={<div>Practice Page (Coming Soon)</div>} />
         <Route path="resources" element={<div>Resources Page (Coming Soon)</div>} />
