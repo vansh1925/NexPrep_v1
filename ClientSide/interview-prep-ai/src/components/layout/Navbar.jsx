@@ -35,9 +35,6 @@ const Navbar = () => {
             <Link to="/practice" className="text-neutral-600 hover:text-neutral-900">
               Practice
             </Link>
-            <Link to="/resources" className="text-neutral-600 hover:text-neutral-900">
-              Resources
-            </Link>
             {user ? (
               <div className="flex items-center space-x-4">
                 <Link to="/dashboard" className="text-neutral-600 hover:text-neutral-900">
@@ -94,12 +91,6 @@ const Navbar = () => {
             className="block px-3 py-2 rounded-md text-base font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
           >
             Practice
-          </Link>
-          <Link
-            to="/resources"
-            className="block px-3 py-2 rounded-md text-base font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
-          >
-            Resources
           </Link>
           {user ? (
             <>
