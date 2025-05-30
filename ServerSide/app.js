@@ -32,5 +32,5 @@ app.use("/api/auth", authRouter)
 app.use("/api/session", SessionRouter)
 app.use("/api/question", QuestionRouter)
 app.use("/api/ai/generate-question", verifyJWT, generateInterviewQuestions)
-app.use("/api/ai/generate-explaination", verifyJWT, generateConceptExplanation)
+app.use("/api/ai/concept-explanation", verifyJWT, generateConceptExplanation)
 export { app };

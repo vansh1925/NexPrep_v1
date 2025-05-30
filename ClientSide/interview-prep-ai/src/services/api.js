@@ -382,6 +382,49 @@ class ApiService {
       throw error;
     }
   }
+
+  static async generateConceptExplanation(questionData) {
+    try {
+      const token = localStorage.getItem('token');
+      const url = API_PATHS.AI.GENERATE_EXPLANATION;
+      console.log('Attempting to generate concept explanation:', url);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(questionData),
+        credentials: 'include',
+      });
+
+      const responseData = await response.json();
+      console.log('Generate explanation response status:', response.status);
+      console.log('Generate explanation response data:', responseData);
+
+      if (!response.ok) {
+        const errorData = responseData || {};
+        throw new Error(errorData.error || errorData.message || `Failed to generate explanation: Server responded with status ${response.status}`);
+      }
+
+      // Expecting an object with title and explanation properties
+      if (!responseData || typeof responseData !== 'object' || !responseData.title || !responseData.explanation) {
+         console.error('API response for concept explanation is not in the expected format:', responseData);
+         throw new Error('Invalid data format from server: Expected an object with title and explanation properties.');
+      }
+
+      return responseData;
+
+    } catch (error) {
+      console.error('Generate concept explanation error:', error);
+      if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+        throw new Error('Unable to connect to the server. Please check if the server is running.');
+      }
+      throw error;
+    }
+  }
 }
 
 export default ApiService; 

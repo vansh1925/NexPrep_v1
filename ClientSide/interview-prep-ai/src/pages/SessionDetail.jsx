@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import ApiService from '../services/api';
 import { useUser } from '../context/userContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IoPushOutline, IoPushSharp, IoChevronDown, IoChevronUp, IoSparklesOutline } from 'react-icons/io5';
+import { IoPushOutline, IoPushSharp, IoChevronDown, IoChevronUp, IoSparklesOutline, IoCloseCircleOutline } from 'react-icons/io5';
 
 const SessionDetail = () => {
   const { sessionId } = useParams(); // Get the session ID from the URL
@@ -13,6 +13,12 @@ const SessionDetail = () => {
   const [error, setError] = useState(null);
   const [openQuestionId, setOpenQuestionId] = useState(null);
   const [generatingQuestions, setGeneratingQuestions] = useState(false); // State for loading spinner
+
+  // New state for Learn More side menu
+  const [isLearnMoreOpen, setIsLearnMoreOpen] = useState(false);
+  const [explanationData, setExplanationData] = useState(null);
+  const [loadingExplanation, setLoadingExplanation] = useState(false); // Loading for explanation
+  const [explanationError, setExplanationError] = useState(null); // Error for explanation
 
   useEffect(() => {
     const fetchSessionDetails = async () => {
@@ -88,7 +94,10 @@ const SessionDetail = () => {
       // Add the newly generated questions to the existing session questions
       setSession(prevSession => {
         if (!prevSession) return null;
-        return { ...prevSession, questions: [...prevSession.questions, ...newQuestions] };
+        // Ensure new questions are also sorted with pinned ones at the top
+         const combinedQuestions = [...prevSession.questions, ...newQuestions];
+         combinedQuestions.sort((a, b) => (b.isPinned || 0) - (a.isPinned || 0) || new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        return { ...prevSession, questions: combinedQuestions };
       });
     } catch (err) {
       console.error('Error generating questions:', err);
@@ -96,6 +105,32 @@ const SessionDetail = () => {
     } finally {
       setGeneratingQuestions(false);
     }
+  };
+
+  // Handle fetching and showing concept explanation
+  const handleLearnMore = async (questionText) => {
+    setLoadingExplanation(true);
+    setExplanationError(null);
+    setExplanationData(null); // Clear previous explanation
+    setIsLearnMoreOpen(true); // Open the side menu
+
+    try {
+      const data = await ApiService.generateConceptExplanation({ question: questionText });
+      setExplanationData(data);
+    } catch (err) {
+      console.error('Error fetching explanation:', err);
+      setExplanationError(err.message || 'Failed to load explanation.');
+      setExplanationData(null); // Ensure data is null on error
+    } finally {
+      setLoadingExplanation(false);
+    }
+  };
+
+  // Close the side menu
+  const closeLearnMore = () => {
+    setIsLearnMoreOpen(false);
+    setExplanationData(null); // Clear data when closing
+    setExplanationError(null); // Clear error when closing
   };
 
   if (loading || userLoading) {
@@ -112,7 +147,7 @@ const SessionDetail = () => {
 
   // Render session details here
   return (
-    <div className="container mx-auto p-8 bg-gradient-to-br from-green-50 to-blue-100 min-h-screen rounded-lg shadow-lg">
+    <div className="container mx-auto p-8 bg-gradient-to-br from-green-50 to-blue-100 min-h-screen rounded-lg shadow-lg relative">
       <motion.h1
         className="text-5xl font-extrabold text-gray-800 mb-10 pb-3 border-b-4 border-green-600 inline-block"
         initial={{ opacity: 0, y: -20 }}
@@ -151,29 +186,34 @@ const SessionDetail = () => {
                   className="flex justify-between items-center cursor-pointer"
                   onClick={() => toggleAnswer(question._id)}
                 >
-                  <p className="font-semibold text-xl text-gray-900 pr-6 flex-grow">Q{index + 1}: {question.question}</p>
-                  <div className="flex items-center space-x-4 flex-shrink-0">
+                  <h3 className="text-xl font-semibold text-gray-800 pr-4 flex-1">{index + 1}. {question.question}</h3>
+                  <div className="flex-shrink-0 flex items-center space-x-4">
                     {/* Pin Button */}
                     <button
                       onClick={(e) => {
-                        e.stopPropagation();
+                        e.stopPropagation(); // Prevent answer toggle
                         handlePinToggle(question._id);
                       }}
-                      className="p-2.5 rounded-full bg-gray-100 hover:bg-blue-100 transition-colors duration-200 shadow-md"
+                      className={`p-2 rounded-full transition-colors duration-200 ${question.isPinned ? 'text-red-500 hover:bg-red-100' : 'text-gray-400 hover:bg-gray-100'}`}
                       title={question.isPinned ? 'Unpin Question' : 'Pin Question'}
                     >
-                      {question.isPinned ? <IoPushSharp className="text-blue-700" size={24} /> : <IoPushOutline className="text-gray-600" size={24} />}
+                      {question.isPinned ? <IoPushSharp size={20} /> : <IoPushOutline size={20} />}
                     </button>
-                    {/* Learn More Button (Placeholder) */}
-                    <button
-                      onClick={(e) => e.stopPropagation()} // Prevent toggling answer
-                      className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-semibold hover:bg-green-600 transition-colors duration-200 shadow-md"
+                    {/* Learn More Button */}
+                     <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent answer toggle
+                        handleLearnMore(question.question); // Pass question text to handler
+                      }}
+                      className="p-2 rounded-full text-blue-500 hover:bg-blue-100 transition-colors duration-200"
                       title="Learn More"
                     >
                       Learn More
                     </button>
-                    {/* Dropdown Arrow */}
-                    {openQuestionId === question._id ? <IoChevronUp size={24} className="text-gray-700"/> : <IoChevronDown size={24} className="text-gray-700"/>}
+                    {/* Toggle Answer Button */}
+                    <button className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors duration-200">
+                       {openQuestionId === question._id ? <IoChevronUp size={20} /> : <IoChevronDown size={20} />}
+                    </button>
                   </div>
                 </div>
 
@@ -216,6 +256,39 @@ const SessionDetail = () => {
           )}
         </motion.button>
       </div>
+
+      {/* Learn More Side Menu */}
+      <AnimatePresence>
+        {isLearnMoreOpen && (
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="fixed top-0 right-0 w-full md:w-1/3 h-full bg-white shadow-xl z-50 p-8 overflow-y-auto"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">Concept Explanation</h2>
+              <button onClick={closeLearnMore} className="text-gray-500 hover:text-gray-700">
+                <IoCloseCircleOutline size={30} />
+              </button>
+            </div>
+
+            {loadingExplanation && <div className="text-center text-gray-600">Loading explanation...</div>}
+            {explanationError && <div className="text-red-500 text-center">Error: {explanationError}</div>}
+
+            {explanationData && (
+              <div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">{explanationData.title}</h3>
+                <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: explanationData.explanation.replace(/```javascript\n([^\n]*)\n```/g, '<pre><code class="language-javascript">$1</code></pre>').replace(/```solidity\n([^\n]*)\n```/g, '<pre><code class="language-solidity">$1</code></pre>').replace(/```([^\n]*)\n([^\n]*)\n```/g, '<pre><code class="language-$1">$2</code></pre>') }}>
+                  {/* Explanation content will be rendered here */}
+                   {/* Using dangerouslySetInnerHTML for now to handle potential HTML/markdown in explanation */} 
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* You can add more sections */}
     </div>
