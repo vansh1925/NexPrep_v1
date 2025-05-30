@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Code, Brain, Target, Sparkles } from 'lucide-react';
+import { ArrowRight, Code, Brain, Target, Sparkles, Linkedin, Github } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { App_features } from '../utils/data';
 
 const Home = () => {
   return (
@@ -58,8 +59,8 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white">
+      {/* Features Section (Updated to use data) */}
+      <section className="py-20 bg-neutral-100">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -69,50 +70,60 @@ const Home = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
-              Why Choose NexPrep?
+              Key Features
             </h2>
             <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-              Our platform combines cutting-edge AI technology with proven interview preparation techniques.
+              Explore the powerful tools and capabilities NexPrep offers to elevate your interview preparation.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                icon: <Code className="h-8 w-8 text-primary-500" />,
-                title: 'Smart Practice',
-                description: 'AI-powered mock interviews with real-time feedback and suggestions.',
-              },
-              {
-                icon: <Brain className="h-8 w-8 text-secondary-500" />,
-                title: 'Personalized Learning',
-                description: 'Adaptive learning paths based on your performance and goals.',
-              },
-              {
-                icon: <Target className="h-8 w-8 text-accent-500" />,
-                title: 'Industry Focus',
-                description: 'Specialized preparation for tech, finance, consulting, and more.',
-              },
-              {
-                icon: <Sparkles className="h-8 w-8 text-primary-500" />,
-                title: 'Expert Insights',
-                description: 'Access to industry experts and proven interview strategies.',
-              },
-            ].map((feature, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {App_features.map((feature, index) => (
               <motion.div
-                key={index}
+                key={feature.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
                 viewport={{ once: true }}
-                className="p-6 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow duration-300"
+                className="p-6 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center text-center"
               >
-                <div className="mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold text-neutral-900 mb-2">{feature.title}</h3>
+                <div className="mb-4 text-primary-600" style={{ fontSize: '2.5rem' }}>{feature.icon || '✨'}</div>
+                <h3 className="text-xl font-semibold text-neutral-900 mb-2">{feature.name}</h3>
                 <p className="text-neutral-600">{feature.description}</p>
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Social Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4 text-center">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-3xl md:text-4xl font-bold text-neutral-900 mb-8"
+          >
+            Connect with the Developer
+          </motion.h2>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="flex justify-center space-x-8"
+          >
+            <a href="https://www.linkedin.com/in/vansh-puri-300377315/" target="_blank" rel="noopener noreferrer" className="text-neutral-600 hover:text-blue-600 transition-colors duration-300">
+              <Linkedin size={48} />
+              <span className="sr-only">LinkedIn</span>
+            </a>
+            <a href="https://github.com/vansh1925" target="_blank" rel="noopener noreferrer" className="text-neutral-600 hover:text-gray-800 transition-colors duration-300">
+              <Github size={48} />
+              <span className="sr-only">GitHub</span>
+            </a>
+          </motion.div>
         </div>
       </section>
     </div>
