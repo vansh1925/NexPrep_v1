@@ -33,11 +33,12 @@ export const UserProvider = ({ children }) => {
     try {
       const data = await ApiService.getProfile();
       setUser(data);
+      return data; // Return the data for use in login/signup
     } catch (err) {
       console.error('Error fetching user profile:', err);
       setUser(null);
       localStorage.removeItem('token');
-      setError(err.message);
+      throw err; // Propagate error for handling in login/signup
     } finally {
       setLoading(false);
     }
@@ -49,8 +50,11 @@ export const UserProvider = ({ children }) => {
       const data = await ApiService.login(credentials);
       if (data && data.token) {
         localStorage.setItem('token', data.token);
+        // Fetch profile first, then navigate
         await fetchUserProfile();
+        console.log('Attempting to navigate to /dashboard after login.');
         navigate('/dashboard');
+        console.log('Navigation to /dashboard called after login.');
         return data;
       } else {
         throw new Error('Invalid response from server');
@@ -67,8 +71,11 @@ export const UserProvider = ({ children }) => {
       const data = await ApiService.signup(formData);
       if (data && data.token) {
         localStorage.setItem('token', data.token);
+        // Fetch profile first, then navigate
         await fetchUserProfile();
+        console.log('Attempting to navigate to /dashboard after signup.');
         navigate('/dashboard');
+        console.log('Navigation to /dashboard called after signup.');
         return data;
       } else {
         throw new Error('Invalid response from server');
@@ -104,7 +111,9 @@ export const UserProvider = ({ children }) => {
     } finally {
       localStorage.removeItem('token');
       setUser(null);
+      console.log('Attempting to navigate to / after logout.');
       navigate('/');
+      console.log('Navigation to / called after logout.');
     }
   };
 
@@ -124,11 +133,11 @@ export const UserProvider = ({ children }) => {
     try {
       setError(null);
       const data = await ApiService.uploadAvatar(formData);
-      if (data) {
-        await fetchUserProfile(); // Refresh user data to get new avatar
+      if (data && data.imageUrl) {
+        await fetchUserProfile();
         return data;
       } else {
-        throw new Error('Invalid response from server');
+         throw new Error('Image upload failed or returned invalid data.');
       }
     } catch (err) {
       setError(err.message || 'Image upload failed');

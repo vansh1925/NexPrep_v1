@@ -1,12 +1,16 @@
 import { API_PATHS } from '../config/apiPaths';
 
 class ApiService {
-  static async signup(formData) {
+  static async signup(userData) {
     try {
       console.log('Attempting to connect to:', API_PATHS.AUTH.SIGNUP);
       const response = await fetch(API_PATHS.AUTH.SIGNUP, {
         method: 'POST',
-        body: formData, // FormData will automatically set the correct Content-Type
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(userData),
         credentials: 'include',
       });
 

@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { UserProvider } from './context/userContext';
+import { UserProvider, useUser } from './context/userContext';
 import Navbar from './components/layout/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -11,23 +11,32 @@ function App() {
   return (
     <BrowserRouter>
       <UserProvider>
-        <div className="min-h-screen bg-white">
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/session/:sessionId" element={<SessionDetail />} />
-            {/* Add more routes here as we create them */}
-            <Route path="practice" element={<div>Practice Page (Coming Soon)</div>} />
-            <Route path="resources" element={<div>Resources Page (Coming Soon)</div>} />
-            <Route path="profile" element={<div>Profile Page (Coming Soon)</div>} />
-          </Routes>
-        </div>
+        <AppContent />
       </UserProvider>
     </BrowserRouter>
   );
 }
+
+const AppContent = () => {
+  const { user, loading: userLoading } = useUser();
+
+  console.log('AppContent rendering:', { user, userLoading });
+
+  return (
+    <div className="min-h-screen bg-white">
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/session/:sessionId" element={<SessionDetail />} />
+        <Route path="practice" element={<div>Practice Page (Coming Soon)</div>} />
+        <Route path="resources" element={<div>Resources Page (Coming Soon)</div>} />
+        <Route path="profile" element={<div>Profile Page (Coming Soon)</div>} />
+      </Routes>
+    </div>
+  );
+};
 
 export default App;

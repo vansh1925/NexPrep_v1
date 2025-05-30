@@ -11,27 +11,37 @@ const Dashboard = () => {
   const [sessionsError, setSessionsError] = useState(null);
   const navigate = useNavigate();
 
+  console.log('Dashboard component rendered.', { user, userLoading, userError, sessions, loadingSessions, sessionsError });
+
   useEffect(() => {
+    console.log('Dashboard useEffect running.', { user, userLoading });
+    // Redirect to login if user is not loading and not authenticated
     if (!userLoading && !user) {
-      // If user is not logged in after userLoading is done, redirect to login
+      console.log('User not loading and not authenticated, redirecting to login.');
       navigate('/login');
     } else if (user) {
-      // If user is logged in, fetch sessions
+      // If we have a user, fetch sessions
+      console.log('User is logged in, attempting to fetch sessions.');
       fetchSessions();
     }
-  }, [user, userLoading, navigate]);
+  }, [user, userLoading, navigate]); // Simplified dependencies
 
   const fetchSessions = async () => {
+    console.log('fetchSessions function called.');
     try {
       setLoadingSessions(true);
       setSessionsError(null);
       const data = await ApiService.getAllSessions();
-      setSessions(data);
+      console.log('Sessions fetched successfully:', data);
+      // Sort sessions by creation date in descending order (most recent first)
+      const sortedSessions = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setSessions(sortedSessions);
     } catch (err) {
-      console.error('Error fetching sessions:', err);
+      console.error('Error in fetchSessions:', err);
       setSessionsError(err.message);
     } finally {
       setLoadingSessions(false);
+      console.log('fetchSessions finished.');
     }
   };
 
@@ -42,6 +52,7 @@ const Dashboard = () => {
         await ApiService.deleteSession(sessionId);
         // Remove the deleted session from the state
         setSessions(sessions.filter(session => session._id !== sessionId));
+        console.log(`Session ${sessionId} deleted successfully.`);
       }
     } catch (err) {
       console.error('Error deleting session:', err);
@@ -50,8 +61,16 @@ const Dashboard = () => {
     }
   };
 
+  // Show loading state only when user is loading or sessions are loading
   if (userLoading || loadingSessions) {
-    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   if (userError) {

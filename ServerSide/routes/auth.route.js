@@ -9,6 +9,12 @@ router.post("/register", register);
 router.post("/login", login);
 router.get("/profile", verifyJWT, getUserProfile);
 
+// Add a placeholder route for logout
+router.post("/logout", (req, res) => {
+    // You'll need to implement actual logout logic here later
+    res.status(200).json({ success: true, message: "Logout successful (placeholder)" });
+});
+
 //very very imp step yahan jab postman pe testing krega to login ya register krne ke baad jo token generate hoga use authorisation header main bearer token select krke daaliyo bina "" ke 
 //and todo:- ki sir ke yt main need nhi hui iski ya hui study it imp..............
 router.post("/upload-image", upload.single("image"), (req, res) => {

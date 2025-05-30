@@ -1,13 +1,11 @@
-import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import ApiService from '../services/api';
 import { motion } from 'framer-motion';
-import { Button } from '../components/ui/Button';
-import { Eye, EyeOff, Upload, X } from 'lucide-react';
-import { useUser } from '../context/userContext';
+import { FaUserCircle } from 'react-icons/fa';
 
 const Signup = () => {
-  const { signup, error: authError } = useUser();
-  const fileInputRef = useRef(null);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -15,220 +13,213 @@ const Signup = () => {
     confirmPassword: '',
   });
   const [profileImage, setProfileImage] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [profileImageUrl, setProfileImageUrl] = useState(null); // To store the uploaded image URL
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [passwordShown, setPasswordShown] = useState(false);
+  const [confirmPasswordShown, setConfirmPasswordShown] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        setError('Image size should be less than 5MB');
+      // Basic file size validation (e.g., 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Profile image size should be less than 5MB.');
+        setProfileImage(null);
+        setProfileImageUrl(null);
         return;
       }
       setProfileImage(file);
-      setError('');
-    }
-  };
-
-  const removeImage = () => {
-    setProfileImage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      setError(null);
+      // Optional: Display a local preview of the image
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImageUrl(reader.result); // For local preview
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setProfileImage(null);
+      setProfileImageUrl(null);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setIsLoading(false);
+      setError('Passwords do not match.');
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     try {
-      // Create FormData object for multipart/form-data
-      const submitData = new FormData();
-      submitData.append('name', formData.name);
-      submitData.append('email', formData.email);
-      submitData.append('password', formData.password);
+      let imageUrl = null;
+      // 1. Upload image first if selected
       if (profileImage) {
-        submitData.append('profileImage', profileImage);
+        const imageFormData = new FormData();
+        imageFormData.append('image', profileImage);
+        const uploadResponse = await ApiService.uploadAvatar(imageFormData);
+        if (uploadResponse && uploadResponse.imageUrl) {
+          imageUrl = uploadResponse.imageUrl;
+        } else {
+          throw new Error('Image upload failed.'); // Handle upload failure
+        }
       }
 
-      await signup(submitData);
+      // 2. Prepare registration data with image URL
+      const registrationData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        profileImageUrl: imageUrl, // Include the uploaded image URL
+      };
+
+      // 3. Call signup API with registration data (as JSON)
+      const signupResponse = await ApiService.signup(registrationData);
+
+      if (signupResponse && signupResponse.token) {
+        localStorage.setItem('token', signupResponse.token);
+        // Assuming signup also returns user data or fetch profile after signup
+        // await fetchUserProfile(); // If UserContext has a fetchProfile function
+        navigate('/dashboard'); // Navigate on successful signup
+      } else {
+        throw new Error('Signup failed. Invalid response from server.');
+      }
     } catch (err) {
-      setError(err.message);
+      console.error('Signup error:', err);
+      setError(err.message || 'An unexpected error occurred during signup.');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setPasswordShown(!passwordShown);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setConfirmPasswordShown(!confirmPasswordShown);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50 flex items-center justify-center px-4 py-12">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
-        <div className="bg-white rounded-2xl shadow-sm p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-neutral-900">Create your account</h1>
-            <p className="text-neutral-600 mt-2">Join NexPrep and start your interview preparation journey</p>
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="flex justify-center items-center min-h-screen bg-gray-100 p-6"
+    >
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">Sign Up</h2>
+
+        {error && <div className="text-red-500 text-center mb-4">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="flex justify-center mb-6">
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+              {profileImageUrl ? (
+                <img src={profileImageUrl} alt="Profile Preview" className="w-full h-full object-cover" />
+              ) : (
+                <FaUserCircle className="text-gray-500" size={60} />
+              )}
+            </div>
           </div>
 
-          {(error || authError) && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
-              {error || authError}
-            </div>
-          )}
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Full Name</label>
+            <input
+              type="text"
+              id="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+              required
+            />
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Profile Image Upload */}
-            <div className="flex flex-col items-center mb-6">
-              <div className="relative w-24 h-24 mb-4">
-                {profileImage ? (
-                  <div className="relative w-full h-full">
-                    <img
-                      src={URL.createObjectURL(profileImage)}
-                      alt="Profile preview"
-                      className="w-full h-full rounded-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="w-full h-full rounded-full bg-neutral-100 flex items-center justify-center">
-                    <Upload className="w-8 h-8 text-neutral-400" />
-                  </div>
-                )}
-              </div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageChange}
-                accept="image/*"
-                className="hidden"
-                id="profileImage"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {profileImage ? 'Change Photo' : 'Upload Photo'}
-              </Button>
-            </div>
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+              required
+            />
+          </div>
 
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-neutral-700 mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Enter your full name"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-neutral-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Enter your email"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-neutral-700 mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Create a password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-700 mb-1">
-                Confirm Password
-              </label>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Confirm your password"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
+          <div className="relative">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+            <input
+              type={passwordShown ? "text" : "password"}
+              id="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm pr-10"
+              required
+            />
+            <button
+              type="button"
+              onClick={togglePasswordVisibility}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 mt-6"
             >
-              {isLoading ? 'Creating account...' : 'Create account'}
-            </Button>
-          </form>
+              {passwordShown ? 'Hide' : 'Show'}
+            </button>
+          </div>
 
-          <p className="mt-6 text-center text-sm text-neutral-600">
-            Already have an account?{' '}
-            <Link to="/login" className="text-primary-500 hover:text-primary-600 font-medium">
-              Sign in
-            </Link>
-          </p>
+          <div className="relative">
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>
+            <input
+              type={confirmPasswordShown ? "text" : "password"}
+              id="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm pr-10"
+              required
+            />
+            <button
+              type="button"
+              onClick={toggleConfirmPasswordVisibility}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 mt-6"
+            >
+              {confirmPasswordShown ? 'Hide' : 'Show'}
+            </button>
+          </div>
+
+          <div>
+            <label htmlFor="profileImage" className="block text-sm font-medium text-gray-700">Profile Image (Optional)</label>
+            <input
+              type="file"
+              id="profileImage"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+            />
+            {/* Optional: Add an image preview here */}
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={loading}
+            >
+              {loading ? 'Signing Up...' : 'Sign Up'}
+            </button>
+          </div>
+        </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">Already have an account? <Link to="/login" className="font-medium text-green-600 hover:text-green-500">Log In</Link></p>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </motion.div>
   );
 };
 
