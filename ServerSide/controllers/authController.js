@@ -1,6 +1,6 @@
 import { User } from "../models/User.models.js";
 import jwt from "jsonwebtoken";
-import bcryptjs from "bcrypt";
+import bcryptjs from "bcryptjs";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // Generate JWT token
