@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import ApiService from '../services/api';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaUserCircle } from 'react-icons/fa';
+import { useUser } from '../context/userContext';
+import ApiService from '../services/api';
 
 const Signup = () => {
-  const navigate = useNavigate();
+  const { signup, error: authError } = useUser();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -13,7 +14,7 @@ const Signup = () => {
     confirmPassword: '',
   });
   const [profileImage, setProfileImage] = useState(null);
-  const [profileImageUrl, setProfileImageUrl] = useState(null); // To store the uploaded image URL
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [passwordShown, setPasswordShown] = useState(false);
@@ -26,7 +27,6 @@ const Signup = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Basic file size validation (e.g., 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('Profile image size should be less than 5MB.');
         setProfileImage(null);
@@ -35,10 +35,9 @@ const Signup = () => {
       }
       setProfileImage(file);
       setError(null);
-      // Optional: Display a local preview of the image
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfileImageUrl(reader.result); // For local preview
+        setProfileImageUrl(reader.result);
       };
       reader.readAsDataURL(file);
     } else {
@@ -60,7 +59,6 @@ const Signup = () => {
 
     try {
       let imageUrl = null;
-      // 1. Upload image first if selected
       if (profileImage) {
         const imageFormData = new FormData();
         imageFormData.append('image', profileImage);
@@ -68,29 +66,18 @@ const Signup = () => {
         if (uploadResponse && uploadResponse.imageUrl) {
           imageUrl = uploadResponse.imageUrl;
         } else {
-          throw new Error('Image upload failed.'); // Handle upload failure
+          throw new Error('Image upload failed.');
         }
       }
 
-      // 2. Prepare registration data with image URL
       const registrationData = {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        profileImageUrl: imageUrl, // Include the uploaded image URL
+        profileImageUrl: imageUrl,
       };
 
-      // 3. Call signup API with registration data (as JSON)
-      const signupResponse = await ApiService.signup(registrationData);
-
-      if (signupResponse && signupResponse.token) {
-        localStorage.setItem('token', signupResponse.token);
-        // Assuming signup also returns user data or fetch profile after signup
-        // await fetchUserProfile(); // If UserContext has a fetchProfile function
-        navigate('/dashboard'); // Navigate on successful signup
-      } else {
-        throw new Error('Signup failed. Invalid response from server.');
-      }
+      await signup(registrationData);
     } catch (err) {
       console.error('Signup error:', err);
       setError(err.message || 'An unexpected error occurred during signup.');
@@ -117,7 +104,7 @@ const Signup = () => {
       <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">Sign Up</h2>
 
-        {error && <div className="text-red-500 text-center mb-4">{error}</div>}
+        {(error || authError) && <div className="text-red-500 text-center mb-4">{error || authError}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="flex justify-center mb-6">
@@ -201,7 +188,6 @@ const Signup = () => {
               onChange={handleImageChange}
               className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
             />
-            {/* Optional: Add an image preview here */}
           </div>
 
           <div>
