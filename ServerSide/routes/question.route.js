@@ -3,7 +3,7 @@ import { togglePinQuestion, updateQuestionNote, addQuestionsToSession } from "..
 import verifyJWT from "../middlewares/authMiddleware.js"
 const router = Router()
 router.post("/add", verifyJWT, addQuestionsToSession)
-router.get("/:id/pin", verifyJWT, togglePinQuestion)
+router.put("/:id/pin", verifyJWT, togglePinQuestion)
 router.get("/:id/note", verifyJWT, updateQuestionNote)
 
 
