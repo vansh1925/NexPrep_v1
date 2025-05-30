@@ -294,6 +294,47 @@ class ApiService {
       throw error;
     }
   }
+
+  static async generateQuestions(sessionDetails, numberOfQuestions) {
+    try {
+      const token = localStorage.getItem('token');
+      const url = API_PATHS.AI.GENERATE_QUESTIONS;
+      console.log('Attempting to generate questions:', url);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ ...sessionDetails, numberOfQuestions }),
+        credentials: 'include',
+      });
+
+      const responseData = await response.json();
+      console.log('Generate questions response status:', response.status);
+      console.log('Generate questions response data:', responseData);
+
+      if (!response.ok) {
+        throw new Error(responseData.error || responseData.message || 'Failed to generate questions');
+      }
+
+      // Assuming the backend returns an object with a 'data' property containing an array of questions
+       if (!responseData || typeof responseData !== 'object' || !Array.isArray(responseData.data)) {
+         console.error('API response for generating questions is not in the expected format:', responseData);
+         throw new Error('Invalid data format from server: Expected an object with a data array of questions.');
+      }
+
+      return responseData.data;
+
+    } catch (error) {
+      console.error('Generate questions error:', error);
+      if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+        throw new Error('Unable to connect to the server. Please check if the server is running.');
+      }
+      throw error;
+    }
+  }
 }
 
 export default ApiService; 

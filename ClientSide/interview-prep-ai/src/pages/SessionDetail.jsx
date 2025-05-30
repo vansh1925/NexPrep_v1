@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import ApiService from '../services/api';
 import { useUser } from '../context/userContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IoPushOutline, IoPushSharp, IoChevronDown, IoChevronUp } from 'react-icons/io5';
+import { IoPushOutline, IoPushSharp, IoChevronDown, IoChevronUp, IoSparklesOutline } from 'react-icons/io5';
 
 const SessionDetail = () => {
   const { sessionId } = useParams(); // Get the session ID from the URL
@@ -12,6 +12,7 @@ const SessionDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openQuestionId, setOpenQuestionId] = useState(null);
+  const [generatingQuestions, setGeneratingQuestions] = useState(false); // State for loading spinner
 
   useEffect(() => {
     const fetchSessionDetails = async () => {
@@ -68,6 +69,32 @@ const SessionDetail = () => {
     } catch (err) {
       console.error('Error toggling pin:', err);
       alert('Failed to update pin status: ' + err.message); // Provide user feedback
+    }
+  };
+
+  // Handle generating new questions
+  const handleGenerateQuestions = async () => {
+    if (!session) return;
+    setGeneratingQuestions(true);
+    try {
+      const sessionDetails = {
+        role: session.role,
+        experience: session.experience,
+        topicsToFocus: session.topicsToFocus,
+      };
+      const numberOfQuestions = 5; // You can make this dynamic later
+      const newQuestions = await ApiService.generateQuestions(sessionDetails, numberOfQuestions);
+
+      // Add the newly generated questions to the existing session questions
+      setSession(prevSession => {
+        if (!prevSession) return null;
+        return { ...prevSession, questions: [...prevSession.questions, ...newQuestions] };
+      });
+    } catch (err) {
+      console.error('Error generating questions:', err);
+      alert('Failed to generate questions: ' + err.message); // Provide user feedback
+    } finally {
+      setGeneratingQuestions(false);
     }
   };
 
@@ -172,6 +199,23 @@ const SessionDetail = () => {
           <div className="text-gray-700 text-center py-12 text-lg">No questions in this session yet. Time to add some!</div>
         )
       }
+
+      {/* Generate Questions Button */}
+      <div className="mt-10 text-center">
+        <motion.button
+          onClick={handleGenerateQuestions}
+          className={`px-8 py-4 bg-purple-600 text-white rounded-full text-lg font-semibold hover:bg-purple-700 transition-colors duration-200 shadow-lg ${generatingQuestions ? 'opacity-60 cursor-not-allowed' : ''}`}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          disabled={generatingQuestions}
+        >
+          {generatingQuestions ? (
+            'Generating...'
+          ) : (
+            <span className="flex items-center"><IoSparklesOutline className="mr-2" size={24} /> Generate More Questions</span>
+          )}
+        </motion.button>
+      </div>
 
       {/* You can add more sections */}
     </div>
