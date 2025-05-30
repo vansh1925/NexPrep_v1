@@ -320,16 +320,21 @@ class ApiService {
       console.log('Generate questions response data:', responseData);
 
       if (!response.ok) {
-        throw new Error(responseData.error || responseData.message || 'Failed to generate questions');
+        // If response is not OK, it might still return JSON with an error message
+        // Attempt to parse it, but fallback to a generic error if parsing fails
+        const errorData = responseData || {};
+        throw new Error(errorData.error || errorData.message || `Failed to generate questions: Server responded with status ${response.status}`);
       }
 
-      // Assuming the backend returns an object with a 'data' property containing an array of questions
-       if (!responseData || typeof responseData !== 'object' || !Array.isArray(responseData.data)) {
-         console.error('API response for generating questions is not in the expected format:', responseData);
-         throw new Error('Invalid data format from server: Expected an object with a data array of questions.');
+      // Backend is returning the array of questions directly, not inside a 'data' property
+      // We expect an array here. If it's not an array, it's an invalid format.
+      if (!Array.isArray(responseData)) {
+         console.error('API response for generating questions is not a direct array as expected:', responseData);
+         throw new Error('Invalid data format from server: Expected a direct array of questions.');
       }
 
-      return responseData.data;
+      // Return the array of questions directly
+      return responseData;
 
     } catch (error) {
       console.error('Generate questions error:', error);
