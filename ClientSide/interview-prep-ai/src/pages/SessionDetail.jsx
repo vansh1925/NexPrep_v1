@@ -61,15 +61,23 @@ const SessionDetail = () => {
     try {
       // Call the API to toggle pin status
       const updatedQuestion = await ApiService.pinQuestion(questionId);
-      
+
       // Update the sessions state locally to reflect the change
       setSession(prevSession => {
         if (!prevSession) return null;
         const updatedQuestions = prevSession.questions.map(q =>
           q._id === updatedQuestion._id ? updatedQuestion : q
         );
-        // Optional: Sort questions to bring pinned ones to the top
-        updatedQuestions.sort((a, b) => (b.isPinned - a.isPinned));
+        // Sort questions to bring pinned ones to the top, maintaining creation order otherwise
+        updatedQuestions.sort((a, b) => {
+            const pinCompare = (b.isPinned || 0) - (a.isPinned || 0);
+            if (pinCompare !== 0) return pinCompare;
+            // Secondary sort by creation date if pin status is the same (older first)
+            return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+        });
+        
+        console.log('State after pinning/unpinning and sorting:', updatedQuestions);
+        
         return { ...prevSession, questions: updatedQuestions };
       });
     } catch (err) {
@@ -89,19 +97,26 @@ const SessionDetail = () => {
         topicsToFocus: session.topicsToFocus,
       };
       const numberOfQuestions = 5; // You can make this dynamic later
+      // 1. Generate questions using the AI
       const newQuestions = await ApiService.generateQuestions(sessionDetails, numberOfQuestions);
 
-      // Add the newly generated questions to the existing session questions
-      setSession(prevSession => {
-        if (!prevSession) return null;
-        // Ensure new questions are also sorted with pinned ones at the top
-         const combinedQuestions = [...prevSession.questions, ...newQuestions];
-         combinedQuestions.sort((a, b) => (b.isPinned || 0) - (a.isPinned || 0) || new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-        return { ...prevSession, questions: combinedQuestions };
-      });
+      if (newQuestions && newQuestions.length > 0) {
+         // 2. Save the newly generated questions to the session in the backend
+         // The backend will return the updated session object with the new questions including their _id
+         // Ensure ApiService.addQuestionsToSession exists and handles this correctly
+         const updatedSession = await ApiService.addQuestionsToSession(session._id, newQuestions);
+
+         // 3. Update the frontend state with the updated session data
+         // This ensures the newly added questions in the state have their _id and are part of the main session data
+         setSession(updatedSession);
+
+      } else {
+          console.log('No new questions generated.');
+      }
+
     } catch (err) {
-      console.error('Error generating questions:', err);
-      alert('Failed to generate questions: ' + err.message); // Provide user feedback
+      console.error('Error generating or adding questions:', err);
+      alert('Failed to generate or add questions: ' + err.message); // Provide user feedback
     } finally {
       setGeneratingQuestions(false);
     }
@@ -174,65 +189,15 @@ const SessionDetail = () => {
         session.questions && session.questions.length > 0 ? (
           <div className="space-y-8">
             {session.questions.map((question, index) => (
-              <motion.div
+              <QuestionItem // Use a separate component for each question
                 key={question._id}
-                className="bg-white p-7 rounded-xl shadow-lg border border-gray-200 transform transition-transform duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:border-green-400"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                {/* Question and buttons */}
-                <div
-                  className="flex justify-between items-center cursor-pointer"
-                  onClick={() => toggleAnswer(question._id)}
-                >
-                  <h3 className="text-xl font-semibold text-gray-800 pr-4 flex-1">{index + 1}. {question.question}</h3>
-                  <div className="flex-shrink-0 flex items-center space-x-4">
-                    {/* Pin Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent answer toggle
-                        handlePinToggle(question._id);
-                      }}
-                      className={`p-2 rounded-full transition-colors duration-200 ${question.isPinned ? 'text-red-500 hover:bg-red-100' : 'text-gray-400 hover:bg-gray-100'}`}
-                      title={question.isPinned ? 'Unpin Question' : 'Pin Question'}
-                    >
-                      {question.isPinned ? <IoPushSharp size={20} /> : <IoPushOutline size={20} />}
-                    </button>
-                    {/* Learn More Button */}
-                     <button
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent answer toggle
-                        handleLearnMore(question.question); // Pass question text to handler
-                      }}
-                      className="p-2 rounded-full text-blue-500 hover:bg-blue-100 transition-colors duration-200"
-                      title="Learn More"
-                    >
-                      Learn More
-                    </button>
-                    {/* Toggle Answer Button */}
-                    <button className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors duration-200">
-                       {openQuestionId === question._id ? <IoChevronUp size={20} /> : <IoChevronDown size={20} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Answer Dropdown */}
-                <AnimatePresence>
-                  {openQuestionId === question._id && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.5, ease: "easeInOut" }}
-                      className="mt-8 text-gray-800 border-t border-gray-300 pt-8 leading-relaxed"
-                    >
-                      <p><strong>Answer:</strong> {question.answer}</p>
-                      {/* You can add notes section here later */}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
+                question={question}
+                index={index}
+                openQuestionId={openQuestionId}
+                toggleAnswer={toggleAnswer}
+                handlePinToggle={handlePinToggle}
+                handleLearnMore={handleLearnMore}
+              />
             ))}
           </div>
         ) : (
@@ -293,6 +258,72 @@ const SessionDetail = () => {
       {/* You can add more sections */}
     </div>
   );
+};
+
+// Extracting the question item into its own component
+const QuestionItem = ({ question, index, openQuestionId, toggleAnswer, handlePinToggle, handleLearnMore }) => {
+    return (
+        <motion.div
+            key={question._id}
+            layout
+            className="bg-white p-7 rounded-xl shadow-lg border border-gray-200 transform transition-transform duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:border-green-400"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.05 }} // Adjusted delay for potential performance
+        >
+            {/* Question and buttons */}
+            <div
+                className="flex justify-between items-center cursor-pointer"
+                onClick={() => toggleAnswer(question._id)}
+            >
+                <h3 className="text-xl font-semibold text-gray-800 pr-4 flex-1">{index + 1}. {question.question}</h3>
+                <div className="flex-shrink-0 flex items-center space-x-4">
+                    {/* Pin Button */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation(); // Prevent answer toggle
+                            handlePinToggle(question._id);
+                        }}
+                        className={`p-2 rounded-full transition-colors duration-200 ${question.isPinned ? 'text-red-500 hover:bg-red-100' : 'text-gray-400 hover:bg-gray-100'}`}
+                        title={question.isPinned ? 'Unpin Question' : 'Pin Question'}
+                    >
+                        {question.isPinned ? <IoPushSharp size={20} /> : <IoPushOutline size={20} />}
+                    </button>
+                    {/* Learn More Button */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation(); // Prevent answer toggle
+                            handleLearnMore(question.question);
+                        }}
+                        className="p-2 rounded-full text-blue-500 hover:bg-blue-100 transition-colors duration-200"
+                        title="Learn More"
+                    >
+                        Learn More
+                    </button>
+                    {/* Toggle Answer Button */}
+                    <button className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors duration-200">
+                        {openQuestionId === question._id ? <IoChevronUp size={20} /> : <IoChevronDown size={20} />}
+                    </button>
+                </div>
+            </div>
+
+            {/* Answer Dropdown */}
+            <AnimatePresence>
+                {openQuestionId === question._id && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.5, ease: "easeInOut" }}
+                        className="mt-8 text-gray-800 border-t border-gray-300 pt-8 leading-relaxed"
+                    >
+                        <p><strong>Answer:</strong> {question.answer}</p>
+                        {/* You can add notes section here later */}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
 };
 
 export default SessionDetail; 
