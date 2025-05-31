@@ -7,9 +7,12 @@ import { useUser } from '../../context/userContext';
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
 
   const handleGetStarted = () => {
+    if (userLoading) {
+      return;
+    }
     if (user) {
       navigate('/dashboard');
     } else {

@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import a syntax highlighting theme */
+@import 'highlight.js/styles/atom-one-dark.css';
+
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
@@ -52,4 +55,22 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #64748b;
+}
+
+/* Add styles for markdown code blocks */
+.prose pre {
+  background-color: #282c34; /* Dark background color */
+  color: #abb2bf; /* Default text color */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto; /* Enable horizontal scrolling for wide code */
+  font-family: 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace; /* Monospaced font */
+  line-height: 1.5;
+}
+
+.prose pre code {
+  /* Highlight.js takes care of syntax coloring */
+  background-color: transparent; /* Ensure code background is transparent to show pre background */
+  color: inherit; /* Inherit color from pre */
+  padding: 0;
 }

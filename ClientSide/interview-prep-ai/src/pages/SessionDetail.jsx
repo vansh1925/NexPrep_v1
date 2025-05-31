@@ -106,22 +106,11 @@ const SessionDetail = () => {
 
       if (newQuestions && newQuestions.length > 0) {
         // 2. Save the newly generated questions to the session in the backend
-        const updatedSession = await ApiService.addQuestionsToSession(session._id, newQuestions);
+        await ApiService.addQuestionsToSession(session._id, newQuestions);
 
-        // 3. Update the frontend state with the updated session data
-        if (updatedSession && updatedSession.questions) {
-          // Sort questions to maintain consistent order (pinned first, then by creation date)
-          const sortedQuestions = [...updatedSession.questions].sort((a, b) => {
-            const pinCompare = (b.isPinned || 0) - (a.isPinned || 0);
-            if (pinCompare !== 0) return pinCompare;
-            return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-          });
-          
-          setSession(prevSession => ({
-            ...prevSession,
-            questions: sortedQuestions
-          }));
-        }
+        // 3. Re-fetch the entire session data to ensure UI is up-to-date
+        await fetchSessionDetails(); // Call the existing fetch function
+
       } else {
         console.log('No new questions generated.');
       }
