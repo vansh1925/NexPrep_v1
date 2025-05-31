@@ -23,26 +23,27 @@ const SessionDetail = () => {
   const [loadingExplanation, setLoadingExplanation] = useState(false); // Loading for explanation
   const [explanationError, setExplanationError] = useState(null); // Error for explanation
 
-  useEffect(() => {
-    const fetchSessionDetails = async () => {
-      if (!sessionId) {
-        setError('No session ID provided.');
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await ApiService.getOneSession(sessionId);
-        setSession(data);
-      } catch (err) {
-        console.error('Error fetching session details:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Define fetchSessionDetails outside useEffect
+  const fetchSessionDetails = async () => {
+    if (!sessionId) {
+      setError('No session ID provided.');
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await ApiService.getOneSession(sessionId);
+      setSession(data);
+    } catch (err) {
+      console.error('Error fetching session details:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (!userLoading && user) { // Fetch details only if user is loaded and logged in
         fetchSessionDetails();
     } else if (!userLoading && !user) {
@@ -51,7 +52,6 @@ const SessionDetail = () => {
         setError('User not authenticated.'); // Or handle as a protected route
         setLoading(false);
     }
-
   }, [sessionId, user, userLoading]); // Re-run effect if sessionId, user, or userLoading changes
 
   // Toggle answer visibility
