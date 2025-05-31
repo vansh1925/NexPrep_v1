@@ -3,7 +3,7 @@ import { ArrowRight, Code, Brain, Target, Sparkles, Linkedin, Github } from 'luc
 import { Button } from '../components/ui/Button';
 import { App_features } from '../utils/data';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '../../context/userContext';
+import { useUser } from '../context/userContext';
 
 const Home = () => {
   const navigate = useNavigate();
