@@ -4,6 +4,9 @@ import ApiService from '../services/api';
 import { useUser } from '../context/userContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IoPushOutline, IoPushSharp, IoChevronDown, IoChevronUp, IoSparklesOutline, IoCloseCircleOutline } from 'react-icons/io5';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
 
 const SessionDetail = () => {
   const { sessionId } = useParams(); // Get the session ID from the URL
@@ -97,26 +100,35 @@ const SessionDetail = () => {
         topicsToFocus: session.topicsToFocus,
       };
       const numberOfQuestions = 5; // You can make this dynamic later
+      
       // 1. Generate questions using the AI
       const newQuestions = await ApiService.generateQuestions(sessionDetails, numberOfQuestions);
 
       if (newQuestions && newQuestions.length > 0) {
-         // 2. Save the newly generated questions to the session in the backend
-         // The backend will return the updated session object with the new questions including their _id
-         // Ensure ApiService.addQuestionsToSession exists and handles this correctly
-         const updatedSession = await ApiService.addQuestionsToSession(session._id, newQuestions);
+        // 2. Save the newly generated questions to the session in the backend
+        const updatedSession = await ApiService.addQuestionsToSession(session._id, newQuestions);
 
-         // 3. Update the frontend state with the updated session data
-         // This ensures the newly added questions in the state have their _id and are part of the main session data
-         setSession(updatedSession);
-
+        // 3. Update the frontend state with the updated session data
+        if (updatedSession && updatedSession.questions) {
+          // Sort questions to maintain consistent order (pinned first, then by creation date)
+          const sortedQuestions = [...updatedSession.questions].sort((a, b) => {
+            const pinCompare = (b.isPinned || 0) - (a.isPinned || 0);
+            if (pinCompare !== 0) return pinCompare;
+            return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+          });
+          
+          setSession(prevSession => ({
+            ...prevSession,
+            questions: sortedQuestions
+          }));
+        }
       } else {
-          console.log('No new questions generated.');
+        console.log('No new questions generated.');
       }
 
     } catch (err) {
       console.error('Error generating or adding questions:', err);
-      alert('Failed to generate or add questions: ' + err.message); // Provide user feedback
+      alert('Failed to generate or add questions: ' + err.message);
     } finally {
       setGeneratingQuestions(false);
     }
@@ -315,9 +327,15 @@ const QuestionItem = ({ question, index, openQuestionId, toggleAnswer, handlePin
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.5, ease: "easeInOut" }}
-                        className="mt-8 text-gray-800 border-t border-gray-300 pt-8 leading-relaxed"
+                        className="mt-8 text-gray-800 border-t border-gray-300 pt-8 leading-relaxed prose max-w-none"
                     >
-                        <p><strong>Answer:</strong> {question.answer}</p>
+                        <p><strong>Answer:</strong></p>
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeHighlight]}
+                        >
+                            {question.answer}
+                        </ReactMarkdown>
                         {/* You can add notes section here later */}
                     </motion.div>
                 )}
