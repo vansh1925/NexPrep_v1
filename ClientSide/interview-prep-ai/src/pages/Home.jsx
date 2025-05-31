@@ -2,8 +2,20 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Code, Brain, Target, Sparkles, Linkedin, Github } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { App_features } from '../utils/data';
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    navigate('/signup');
+  };
+
+  const handleLearnMore = () => {
+    const featuresSection = document.getElementById('features');
+    featuresSection.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50">
       {/* Hero Section */}
@@ -47,11 +59,11 @@ const Home = () => {
               transition={{ duration: 0.8, delay: 0.6 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Button size="lg" className="group">
+              <Button size="lg" className="group" onClick={handleGetStarted}>
                 Get Started
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
               </Button>
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" onClick={handleLearnMore}>
                 Learn More
               </Button>
             </motion.div>
@@ -60,7 +72,7 @@ const Home = () => {
       </section>
 
       {/* Features Section (Updated to use data) */}
-      <section className="py-20 bg-neutral-100">
+      <section id="features" className="py-20 bg-neutral-100">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
